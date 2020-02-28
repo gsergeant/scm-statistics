@@ -17,7 +17,6 @@ summ$cellType=factor(sapply(strsplit(as.character(summ$cellType_treatment),split
 
 summ$treat=factor(sapply(strsplit(as.character(summ$cellType_treatment),split="_"),function(x) x[2]),levels=c("control","10.0 µm" ,"20.0 µm","40.0 µm","60.0 µm","80.0 µm","100.0 µm","cxcl1","cxcl8","fmlp"))
 
-
 cols=blue2red(7)
 plot(density(subset(summ,cellType=="ht1080"&treat==levels(treat)[1])$delta_z,bw=1.5),main="ht1080",xlab="mean delta_z",col=cols[1])
 for (i in 2:7)

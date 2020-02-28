@@ -11,10 +11,10 @@ head(trajectory_data)
 
 
 
-### Permutation tests ###
+### Permutation tests ###-------------------------------------------------------------------
 
 #function to shuffle treatments within patient
-shuffle = function(dataset, number) {
+shuffle <- function(dataset, number) {
   A <- subset(dataset, patientnumber == number)
   newtreatment<-sample(A[,'treatment'])
   perm_data<-A

@@ -1,4 +1,4 @@
-## Creates step-centric .. dataframes (?) and plots
+## Creates step-centric dataframe and plots
 # Setup ggplot
 theme_set(
   theme_bw() +
@@ -10,6 +10,8 @@ step_data = read.csv("data/features_step_NAN.txt", header = TRUE)
 str(step_data)
 ### placeholder for data getting in future
 # step_data = loadData.getdata()
+#track id to factor
+step_data$track_id <- as.factor(step_data$track_id)
 
 # neem een milde ziekte patient, treatment controle, een random tracknummer
 # maak een aparte plot voor elke feature in functie van de tijd = 5(?) plots (delta x, -, -z, ta_deg én snelheid = delta_z/tijd)

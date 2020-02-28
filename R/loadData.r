@@ -14,6 +14,7 @@ for (coord_table in datalocations) {
 coordinates <- read.table(datalocation, header=TRUE, sep=",")
 
 
+
 #// originele data zijn enorm opgesplitst:
 # 1 tabel coordinaten per treatment (/4)
 # voor elke patient (/3), en er zijn 3 ziektebeelden
@@ -25,6 +26,9 @@ coordinates <- read.table(datalocation, header=TRUE, sep=",")
 #show dataset head & additional info
 dim(coordinates)
 head(coordinates)
+# Standardize column names
+names(coordinates)[names(coordinates) == 'Time_Sample_N'] <- 'frame_id'
+names(coordinates)[names(coordinates) == 'Track_N'] <- 'track_id'
 
 
 # Concatenate after feature calculation  (before -> extra features necessary to subset)
@@ -59,19 +63,39 @@ head(coordinates)
 # somehow calculate features: step and trajectory
 
 
+#----------------------------       # does NOT work, takes too much time, very difficult using $!
+split_bigdataframe <- function(big_dataframe, split_arguments_list){
+  returning <- list()
+  for (argument in split_arguments_list){
+    for (unique_argument in unique(argument)) {
+      extra <- subset(big_dataframe, argument == unique_argument)
+      returning <- c(returning, extra)
+    }
+  }
+  return (returning)
+}
+#checking <- split_bigdataframe(coordinates, c(coordinates$patientnumber))
+#-----------------------------
+
 
 list_  <-  list()
-for treatment in unique(tracks[["column"]]):	#...in tracks.treatment.unique():
-	print('current condition: {}'.format(treatment))
-	tmp  <-  tracks[tracks.treatment==treatment]
-	for track in unique(tmp[[track_id]]):			#...tmp.track_id.unique():
+# currently one big dataframe, need to calculate features per patient per treatment, per track
+for (patient in unique(coordinates[["patientnumber"]])){
+  tmp  <-  subset(coordinates, coordinates$patientnumber==patient)
+  for (treatment in unique(tmp[["treatment"]])){
+    print(paste("current condition: ", treatment))
+    tmp2  <-  subset(tmp, tmp$treatment==treatment)
+    for (track in unique(tmp2[["track_id"]])){
+		  tmp3  <-  subset(tmp2, tmp$track_id==track, select=c(X, Y))
+		  #array  <-  subset(tmp3, select=c(X, Y))
 
-		tmp2  <-  tmp[tmp.track_id==track]
-		array  <-  tmp2.drop(['track_id', 't', 'treatment'], axis=1).as_matrix()
 
-		diff_array  <-  array - array[0]
-		diff_df  <-  pd.DataFrame(diff_array, columns = ['norm_x', 'norm_y'])
-		list_ <- c(list_, diff_df)
+		  diff_array  <-  tmp3 - tmp3[0]
+		  diff_df  <-  #pd.DataFrame(diff_array, columns = ['norm_x', 'norm_y'])
+		  list_ <- c(list_, diff_df)
+	  }
+  }
+}
 
 tracks_norm <- pd.concat(list_)
 tracks_norm <- tracks_norm.assign(track_id=tracks.track_id.values, t=tracks.t.values, x=tracks.x.values, y=tracks.y.values,
@@ -83,23 +107,24 @@ head(tracks_norm)
 
 
 list_<- list()
-for treatment in unique(tracks[[treatment]]):		#...tracks.treatment.unique():
+for (treatment in unique(tracks[[treatment]])){		#...tracks.treatment.unique():
   print('current condition: {}'.format(treatment))
-tmp = tracks[tracks.treatment==treatment]
-for track in unique(tmp[[track_id]]):
+  tmp = tracks[tracks.treatment==treatment]
+  for (track in unique(tmp[[track_id]])){
 
-  tmp2 = tmp[tmp.track_id==track]
+    tmp2 = tmp[tmp.track_id==track]
 
-array = tmp2.drop(['track_id', 't', 'treatment'], axis=1).as_matrix()
-array =np.array(array, dtype=np.float)
+    array = tmp2.drop(['track_id', 't', 'treatment'], axis=1).as_matrix()
+    array =np.array(array, dtype=np.float)
 
-diff_array = np.diff(array, axis=0)
+    diff_array = np.diff(array, axis=0)
 
-diff_array = np.insert(diff_array, [0], [np.NaN, np.NaN], axis=0)
+    diff_array = np.insert(diff_array, [0], [np.NaN, np.NaN], axis=0)
 
-diff_df = pd.DataFrame(diff_array, columns = ['delta_x', 'delta_y'])
-list_ <- c(list_, diff_df)
-
+    diff_df = pd.DataFrame(diff_array, columns = ['delta_x', 'delta_y'])
+    list_ <- c(list_, diff_df)
+  }
+}
 tracks_delta = pd.concat(list_)
 tracks_delta = tracks_delta.assign(track_id=tracks.track_id.values, t=tracks.t.values, x=tracks.x.values, y=tracks.y.values,
                                    norm_x=tracks_norm.norm_x, norm_y=tracks_norm.norm_y, treatment=tracks.treatment.values);
