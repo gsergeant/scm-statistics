@@ -1,3 +1,5 @@
+## TODO: for package, move these to DESCRIPTION import section and use double colon in code!
+
 # for bounding box plot
 library(spatstat)
 # better plot colours
