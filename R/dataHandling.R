@@ -28,6 +28,7 @@ create_trajectory_table <- function(large_step_table, split_factors = NULL) {
   return(large_trajectory_table)
 }
 
+#do we need any other data in TC data?
 create_single_trajectory_table <- function(step_table, split_factors = NULL) {
   # data has to be in column vectors to make trajectory dataframe
   col1 <- unique(step_table[["track_id"]])
@@ -66,3 +67,38 @@ quick_subset_treatment <- function(datatable, split_factor){
     datatable[which(datatable[["treatment"]] == split_factor),]
   return(sub.set)
 }
+
+
+# whenever I would want to generalize this, would need a gui where user selects which columns names conform to which standardised names, and work with the textfields
+standardise_names_cellmia <- function(dataframe) {
+  names(dataframe)[names(dataframe) == 'ID.of.track'] <- 'track_id'
+  names(dataframe)[names(dataframe) == 'time.index'] <- 'frame_id'
+  names(dataframe)[names(dataframe) == 'cell.row'] <- 'Y'   #pixels
+  names(dataframe)[names(dataframe) == 'cell.col'] <- 'X'   #pixels
+  names(dataframe)[names(dataframe) == 'velocity..pixels.moved.between.timepoints...µm.'] <-
+    'speed' # pixels/interval between frames
+  names(dataframe)[names(dataframe) == 'Angle.of.movement'] <-
+    'ta_deg'
+  names(dataframe)[names(dataframe) == 'Delta.of.Angle.of.movement'] <-
+    'delta_ta_deg'
+  names(dataframe)[names(dataframe) == 'angle.of.movement.relative.to.center'] <-
+    'norm_ta_deg'  # compared to the middle of the image frame
+  names(dataframe)[names(dataframe) == 'length.of.track..total.number.of.timepoints.track.was.found.'] <-
+    'track_length'
+
+  # this is the evolving TRACK directionality, it is the ratio of current euclidian/current cumulative distance travelled
+  names(dataframe)[names(dataframe) == 'Consistency.of.motion'] <-
+    'average_directness'
+  names(dataframe)[names(dataframe) == 'Cumulated.distance.travelled..µm.'] <-
+    'cumulative_distance'
+  names(dataframe)[names(dataframe) == 'Distance.between.start.and.endpoint..µm.'] <-
+    'euclidian_distance'
+
+  #track_id naar factor
+  dataframe$track_id <- as.factor(dataframe$track_id)
+
+  return(dataframe)
+}
+
+
+#TODO: add option to drop certain columns (like trajectory features) from the step data frame
