@@ -53,8 +53,3 @@ legend("topright",col=1:4,lty=1,legend=levels(summ$treat)[-(2:7)])
 plot(hlp[chull(hlp$norm_x,hlp$norm_y),c("norm_x","norm_y")])
 lines(hlp[,c("norm_x","norm_y")],type="l")
 
-######################################
-
-wilcox_sr <- function(argumentColumn) {
-return wilcox.test(argumentColumn)
-}
