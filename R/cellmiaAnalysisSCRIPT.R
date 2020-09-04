@@ -10,7 +10,7 @@ data_original = lapply(datalocations,
                   header = TRUE,
                   sep = "\t")
 
-
+#----------------------- IN CASE OF GUI LATER ----------------------------
 #read single table, read class1 and class2 text fields (2x2 fields, column name & specific factor)
 #create new column for the classifier, append dataframe to list for later rbind
 # on button load new dataset, clear fields, prompt new file selection popup
@@ -37,17 +37,53 @@ if (classifiersPresent){
 # Classifier 1 here = treatment  (lowest level classifier / separate image, separate well)
 # Classifier 2 here = patient    (higher level classifier, concerns a group of classifier 1's / cell line)
 # Lowest level qualifiers can be grouped with column identifier, higher level in separate dataframe
+#------------ END ---------------------------------------------------
 
 
-data_original[[1]]$treatment <- "pbs"
-data_original[[2]]$treatment <- "fmlp"
-data_original[[3]]$treatment <- "cxcl1"
-data_original[[4]]$treatment <- "cxcl8"
-
-
+# SCRIPT funtion for adding classifier columns (so that it is collapsable)
+addClassifierData <- function(listOfReadDataframes) {
+  #currently 16 datasets
+  listOfReadDataframes[[1]]$treatment <- "pbs"
+  listOfReadDataframes[[2]]$treatment <- "fmlp"
+  listOfReadDataframes[[3]]$treatment <- "cxcl1"
+  listOfReadDataframes[[4]]$treatment <- "cxcl8"
+  listOfReadDataframes[[5]]$treatment <- "pbs"
+  listOfReadDataframes[[6]]$treatment <- "fmlp"
+  listOfReadDataframes[[7]]$treatment <- "cxcl1"
+  listOfReadDataframes[[8]]$treatment <- "cxcl8"
+  listOfReadDataframes[[9]]$treatment <- "pbs"
+  listOfReadDataframes[[10]]$treatment <- "fmlp"
+  listOfReadDataframes[[11]]$treatment <- "cxcl1"
+  listOfReadDataframes[[12]]$treatment <- "cxcl8"
+  listOfReadDataframes[[13]]$treatment <- "pbs"
+  listOfReadDataframes[[14]]$treatment <- "fmlp"
+  listOfReadDataframes[[15]]$treatment <- "cxcl1"
+  listOfReadDataframes[[16]]$treatment <- "cxcl8"
+  listOfReadDataframes[[1]]$patient <- "2"
+  listOfReadDataframes[[2]]$patient <- "2"
+  listOfReadDataframes[[3]]$patient <- "2"
+  listOfReadDataframes[[4]]$patient <- "2"
+  listOfReadDataframes[[5]]$patient <- "3"
+  listOfReadDataframes[[6]]$patient <- "3"
+  listOfReadDataframes[[7]]$patient <- "3"
+  listOfReadDataframes[[8]]$patient <- "3"
+  listOfReadDataframes[[9]]$patient <- "4"
+  listOfReadDataframes[[10]]$patient <- "4"
+  listOfReadDataframes[[11]]$patient <- "4"
+  listOfReadDataframes[[12]]$patient <- "4"
+  listOfReadDataframes[[13]]$patient <- "5"
+  listOfReadDataframes[[14]]$patient <- "5"
+  listOfReadDataframes[[15]]$patient <- "5"
+  listOfReadDataframes[[16]]$patient <- "5"
+  return(listOfReadDataframes)
+}
+data_original <- addClassifierData(data_original)
 # bind separate dataframes together by row, assuming the same header/columns for all files
 data.step = do.call("rbind", data_original)
 
+# ------------------ IDEA GUI and standardization------------------------------
+#if user uploads several small dataframes, show them the bound head() of all uploads before continuing
+# + add option to start over if they did something wrong in that case?
 
 # ----------- using this function for standardising columns might be difficult as it would require all names
 # ----------- (also ones that wouldn't need to be changed) AND in the right order
@@ -56,47 +92,22 @@ data.step = do.call("rbind", data_original)
 #   x
 # } )
 # --------------------------------------------------------
-standardise_names_cellmia <- function(dataframe) {
-  # whenever I would want to generalize this, would need a gui where user selects which columns names conform to which standardised names, and work with the textfields
-  names(dataframe)[names(dataframe) == 'ID.of.track'] <- 'track_id'
-  names(dataframe)[names(dataframe) == 'time.index'] <- 'frame_id'
-  names(dataframe)[names(dataframe) == 'cell.row'] <- 'Y'   #pixels
-  names(dataframe)[names(dataframe) == 'cell.col'] <- 'X'   #pixels
-  names(dataframe)[names(dataframe) == 'velocity..pixels.moved.between.timepoints...µm.'] <-
-    'speed' # pixels/interval between frames
-  names(dataframe)[names(dataframe) == 'Angle.of.movement'] <-
-    'ta_deg'
-  names(dataframe)[names(dataframe) == 'Delta.of.Angle.of.movement'] <-
-    'delta_ta_deg'
-  names(dataframe)[names(dataframe) == 'angle.of.movement.relative.to.center'] <-
-    'norm_ta_deg'  # compared to the middle of the image frame
-  names(dataframe)[names(dataframe) == 'length.of.track..total.number.of.timepoints.track.was.found.'] <-
-    'track_length'
-
-  # this is the evolving TRACK directionality, it is the ratio of current euclidian/current cumulative distance travelled
-  names(dataframe)[names(dataframe) == 'Consistency.of.motion'] <-
-    'average_directness'
-  names(dataframe)[names(dataframe) == 'Cumulated.distance.travelled..µm.'] <-
-    'cumulative_distance'
-  names(dataframe)[names(dataframe) == 'Distance.between.start.and.endpoint..µm.'] <-
-    'euclidian_distance'
-
-  #track_id naar factor
-  dataframe$track_id <- as.factor(dataframe$track_id)
-
-  return(dataframe)
-}
 
 data.step <- standardise_names_cellmia(data.step)
 data.step$treatment <- as.factor(data.step$treatment)
-
-# data.step file is step centric datafile. Which columns are still missing?
-# norm X and Y and delta X and Y, do we need these?
-
-#make trajectory centric datafile
-data.trajectory <- create_trajectory_table(data.step, "treatment")
+data.step$patient <- as.factor(data.step$patient)
 
 # first: subset the big dataframe by treatment/patient/...
+split_list <- split_by_factor(data.step, "patient")
+#make trajectory centric datafile(s), currently only one classifier possible internally
+traj.list <- lapply(split_list, create_trajectory_table, "treatment")
+# add higher classifier
+traj.list[[1]]$patient <- "2"
+traj.list[[2]]$patient <- "3"
+traj.list[[3]]$patient <- "4"
+traj.list[[4]]$patient <- "5"
+data.trajectory <- do.call("rbind", traj.list)
+
 
 ## Trajectory-centric analysis
 
