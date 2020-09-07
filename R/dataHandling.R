@@ -1,3 +1,5 @@
+# split up a large data frame into subsets of a classifier type
+# returns a list containing all subsets
 split_by_factor <- function(large_dataframe, split_factor) {
   l <- vector("list", length(unique(large_dataframe[[split_factor]])))
   i <- 1
@@ -11,6 +13,8 @@ split_by_factor <- function(large_dataframe, split_factor) {
 }
 
 
+# using step-centric data (tracked data with coordinates), summarize this into a trajectory-centric dataframe
+# input: dataframe with 1 classifier type
 create_trajectory_table <- function(large_step_table, split_factors = NULL) {
   # when the table does not need to be split, we can just create the trajectory data immediately
   if (is.null(split_factors)) {
@@ -28,6 +32,8 @@ create_trajectory_table <- function(large_step_table, split_factors = NULL) {
   return(large_trajectory_table)
 }
 
+# Summarizes single cell tracks.
+# Input: tracked SC data with standardized header, lowest level, no classifiers types
 #do we need any other data in TC data?
 create_single_trajectory_table <- function(step_table, split_factors = NULL) {
   # data has to be in column vectors to make trajectory dataframe
@@ -57,14 +63,17 @@ create_single_trajectory_table <- function(step_table, split_factors = NULL) {
       euclidian_distance = col5
     )
   if (!is.null(split_factors)) {
+    # if the data was split first, add classifier info back in
     trajectory_table[[split_factors]] <- col6
   }
   return(trajectory_table)
 }
 
-quick_subset_treatment <- function(datatable, split_factor){
+# Return a single subset of a specific classifier
+# Requires type STRING for arguments classifier and split_factor
+quick_subset_classifier <- function(datatable, classifier, split_factor){
   sub.set <-
-    datatable[which(datatable[["treatment"]] == split_factor),]
+    datatable[which(datatable[[classifier]] == split_factor),]
   return(sub.set)
 }
 
