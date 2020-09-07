@@ -114,7 +114,7 @@ data.trajectory <- do.call("rbind", traj.list)
 #data exploration: plots
 
 
-# !reminder: par(mfrow) werkt niet met ggplot!
+# Reminder: par(mfrow) does not work with ggplot
 plot_coordinates(data.step, "treatment", "pbs")
 plot_coordinates(data.step, "treatment", "fmlp")
 plot_turningangles(data.step, "treatment", "pbs")
@@ -122,16 +122,16 @@ plot_turningangles(data.step, "treatment", "fmlp")
 
 
 plot(density(data.trajectory$mean_speed), main= "Mean speed, all treatments")
-plot(density((quick_subset_treatment(data.trajectory, "pbs"))$mean_speed), main= "Mean speed, pbs")
-plot(density((quick_subset_treatment(data.trajectory, "fmlp"))$mean_speed), main= "Mean speed, fmlp")
+plot(density((quick_subset_classifier(data.trajectory, "treamtent", "pbs"))$mean_speed), main= "Mean speed, pbs")
+plot(density((quick_subset_classifier(data.trajectory, "treamtent", "fmlp"))$mean_speed), main= "Mean speed, fmlp")
 
 plot(density(data.trajectory$average_directness))
-plot(density((quick_subset_treatment(data.trajectory, "pbs"))$average_directness), main= "Avg directness, pbs")
-plot(density((quick_subset_treatment(data.trajectory, "fmlp"))$average_directness), main= "Avg directness, fmlp")
+plot(density((quick_subset_classifier(data.trajectory, "treamtent", "pbs"))$average_directness), main= "Avg directness, pbs")
+plot(density((quick_subset_classifier(data.trajectory, "treamtent", "fmlp"))$average_directness), main= "Avg directness, fmlp")
 plot(data.trajectory$average_directness,
      data.trajectory$mean_speed, main="All conditions")
-plot(quick_subset_treatment(data.trajectory, "pbs")$average_directness, quick_subset_treatment(data.trajectory, "pbs")$mean_speed, main = "PBS", xlab = "Avg directness", ylab = "Mean speed")
-plot(quick_subset_treatment(data.trajectory, "fmlp")$average_directness, quick_subset_treatment(data.trajectory, "fmlp")$mean_speed, main = "FMLP", xlab = "Avg directness", ylab = "Mean speed")
+plot(quick_subset_classifier(data.trajectory, "treamtent", "pbs")$average_directness, quick_subset_classifier(data.trajectory, "treamtent", "pbs")$mean_speed, main = "PBS", xlab = "Avg directness", ylab = "Mean speed")
+plot(quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$average_directness, quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$mean_speed, main = "FMLP", xlab = "Avg directness", ylab = "Mean speed")
 
 
 #Automatically detect highly skewed features using skewness()?
@@ -140,16 +140,15 @@ plot(quick_subset_treatment(data.trajectory, "fmlp")$average_directness, quick_s
 # if <-1 or >1 --> highly skewed left/right, show feature name
 # others are moderately skewed to symmetrical
 
-#------------------------------------------------------------------------------
-# Exploration: PCA and MDS
-
+#--------------------Exploration: PCA and MDS---------------------------------------
 # princomp(): Spectral decomposition; examines the covariances / correlations between variables
 # prcomp(): Singular value decomposition; examines the covariances / correlations between individuals (slightly better numerical accuracy)
-trajectory.pca <- prcomp(subset(data.trajectory, select = -c(track_id, treatment)), scale = TRUE) # remove factors from PCA
+
+trajectory.pca <- prcomp(subset(data.trajectory, select = -c(track_id, treatment, patient)), scale = TRUE) # remove factors from PCA
 # visualize eigenvectors
 summary(trajectory.pca)
-autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3) #to add colour groups: insert "data = dataframe, colour = 'column'"
-
+ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "treatment") #to add colour groups: insert "data = dataframe, colour = 'column'"
+ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "patient")
 
 
 
@@ -192,7 +191,7 @@ trajectories_releveled <-
 #MDS?
 
 #probabilistic index models
-pim_deltaz <- pim(formula=mean_speed ~ treatment, data = data.trajectory)
+pim_deltaz <- pim(formula=mean_speed ~ treatment * patient, data = data.trajectory)
 summary(pim_deltaz)
 coef(pim_deltaz)
 
