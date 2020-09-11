@@ -93,10 +93,13 @@ data.step = do.call("rbind", data_original)
 # } )
 # --------------------------------------------------------
 
+
+# standardise column names of SC data, define factors
 data.step <- standardise_names_cellmia(data.step)
 data.step$treatment <- as.factor(data.step$treatment)
 data.step$patient <- as.factor(data.step$patient)
 
+# Create TC data
 # first: subset the big dataframe by treatment/patient/...
 split_list <- split_by_factor(data.step, "patient")
 #make trajectory centric datafile(s), currently only one classifier possible internally
@@ -147,12 +150,13 @@ plot(quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$average_direc
 trajectory.pca <- prcomp(subset(data.trajectory, select = -c(track_id, treatment, patient)), scale = TRUE) # remove factors from PCA
 # visualize eigenvectors
 summary(trajectory.pca)
+#weird: in order for autoplot to work, first use ggfortify:: (gives error), then ggplot2:: works.
 ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "treatment") #to add colour groups: insert "data = dataframe, colour = 'column'"
 ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "patient")
 
 
 
-#------------------------------------------------------------------------------
+#-------------------------Normalization -----------------------------------------------------
 #normality tests --- check box-cox method  https://stackoverflow.com/questions/33999512/how-to-use-the-box-cox-power-transformation-in-r
 # transform dependent and independent variables by fitting boxcox(lm(variable ~ 1, data=df)) for each column of your matrix
 # range(out$x[out$y > max(out$y)-qchisq(0.95,1)/2]) to get confidence interval for lambda
@@ -177,21 +181,26 @@ qqPlot(exp(data.trajectory$average_directness))
 qqPlot(sqrt(data.trajectory$average_directness))
 par(mfrow = c(1, 1))
 
-# wilcox-test
+#------------------- Wilcox-test -----------
 
 #linear model
 ##in case of multiple treatment: set PBS (or equivalent control) as baseline for the model to compare with
 trajectories_releveled <-
   within(data.trajectory, treatment <-
-           relevel(treatment, ref = "PBS"))
+           relevel(treatment, ref = "pbs"))
 
 
 
 
 #MDS?
 
-#probabilistic index models
-pim_deltaz <- pim(formula=mean_speed ~ treatment * patient, data = data.trajectory)
+# ---------------------------- Probabilistic index models--------------------------
+# PI summarizes the covariate effects on the shape of the response distribution, while remaining a very informative interpretation of the covariate effect sizes.
+# to add intercept, use +i in formula
+# PIM with 2 groups == WMW test?
+
+# double colon for pim function does not seem to work?
+pim_deltaz <- pim(formula=mean_speed ~ treatment * patient +1, data = data.trajectory)
 summary(pim_deltaz)
 coef(pim_deltaz)
 
@@ -206,10 +215,23 @@ coef(pim_deltaz)
 #features as functions in time
 #splines and wavelet basis functions to smooth the temporal profiles
 
+#---------------- Idea from paper ------------
+# singular value decomposition to get eigenvectors
+# use eigenvectors to choose dimensionality for modeling non-linear responses
+# then regress eigenvectors into i-dimensional spline basis, knots evenly spaced at quantiles
+# then cross validation to find optimal i across all features?
+# using selected i, fit least-squares model to estimate population average curves and variance for all features under alternative and null hypothesis models
+# --------------------------
+
+
 #basis function expansion
 
 
+# !!! use permutation tests to estimate null hypotheses and compare to original test results
 
 
+# ------------- FPCA + hierarchichal and model-based clustering -------
+# Normal pca
+step.pca <- prcomp(subset(data.step, select = c(X, Y, speed, ta_deg, delta_ta_deg, norm_ta_deg)), scale = TRUE) # select which features to include in pca
 
-#FPCA + hierarchichal and model-based clustering
+
