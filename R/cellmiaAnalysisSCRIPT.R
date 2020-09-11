@@ -204,6 +204,11 @@ pim_deltaz <- pim(formula=mean_speed ~ treatment * patient +1, data = data.traje
 summary(pim_deltaz)
 coef(pim_deltaz)
 
+pim_directness <- pim(formula=average_directness ~ treatment * patient +1, data = data.trajectory)
+summary(pim_directness)
+coef(pim_directness)
+
+
 #differential variability mood test
 
 #omnibus tests
@@ -223,6 +228,12 @@ coef(pim_deltaz)
 # using selected i, fit least-squares model to estimate population average curves and variance for all features under alternative and null hypothesis models
 # --------------------------
 
+# ----------- Try step-centric PIM ------------
+#include frame data as well?
+pim_speed <- pim(formula=speed ~ treatment * patient +1, data = data.step) #!!!! error: cannot allocate vector of size 169.3 Gb
+# Try pim on pca components
+
+
 
 #basis function expansion
 
@@ -232,6 +243,7 @@ coef(pim_deltaz)
 
 # ------------- FPCA + hierarchichal and model-based clustering -------
 # Normal pca
+# SOME features are null at start/end of track, fix this first!! (best option most likely remove entire row)
 step.pca <- prcomp(subset(data.step, select = c(X, Y, speed, ta_deg, delta_ta_deg, norm_ta_deg)), scale = TRUE) # select which features to include in pca
 
 
