@@ -120,8 +120,8 @@ data.trajectory <- do.call("rbind", traj.list)
 # Reminder: par(mfrow) does not work with ggplot
 plot_coordinates(data.step, "treatment", "pbs")
 plot_coordinates(data.step, "treatment", "fmlp")
-plot_turningangles(data.step, "treatment", "pbs")
-plot_turningangles(data.step, "treatment", "fmlp")
+plot_turningangles(patient4, "treatment", "pbs")
+plot_turningangles(patient4, "treatment", "fmlp")
 
 
 plot(density(data.trajectory$mean_speed), main= "Mean speed, all treatments")
@@ -137,11 +137,106 @@ plot(quick_subset_classifier(data.trajectory, "treamtent", "pbs")$average_direct
 plot(quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$average_directness, quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$mean_speed, main = "FMLP", xlab = "Avg directness", ylab = "Mean speed")
 
 
+car::scatterplotMatrix(quick_subset_classifier(patient4, "treatment", "fmlp")[3:8])
+
 #Automatically detect highly skewed features using skewness()?
 #go through all columns, remember feature name
 #skewness(feature, na.rm = TRUE)
 # if <-1 or >1 --> highly skewed left/right, show feature name
 # others are moderately skewed to symmetrical
+
+#--------------GG Statsplot ------------------
+ggstatsplot::ggbetweenstats(
+  data = data.trajectory,
+  x = patient,
+  y = mean_speed,
+  title = "Distribution of mean speed across patients"
+)
+
+ggstatsplot::grouped_ggbetweenstats(
+  data = dplyr::filter(
+    .data = data.trajectory,
+    treatment %in% c("pbs", "cxcl1", "cxcl8", "fmlp")
+  ),
+  x = patient,
+  y = mean_speed,
+  grouping.var = treatment, # grouping variable
+  pairwise.comparisons = TRUE, # display significant pairwise comparisons
+  ggsignif.args = list(textsize = 4, tip_length = 0.01),
+  p.adjust.method = "bonferroni", # method for adjusting p-values for multiple comparisons
+  # adding new components to `ggstatsplot` default
+  ggplot.component = list(ggplot2::scale_y_continuous(sec.axis = ggplot2::dup_axis())),
+  k = 3,
+  title.prefix = "Treatment",
+  palette = "default_jama",
+  package = "ggsci",
+  plotgrid.args = list(nrow = 2),
+  title.text = "Differences in mean speed by patient for different treatments"
+)
+
+# now grouped the other way around
+ggstatsplot::grouped_ggbetweenstats(
+  data = dplyr::filter(
+    .data = data.trajectory,
+    patient %in% c("2", "3", "4", "5")
+  ),
+  x = treatment,
+  y = mean_speed,
+  grouping.var = patient, # grouping variable
+  pairwise.comparisons = TRUE, # display significant pairwise comparisons
+  ggsignif.args = list(textsize = 4, tip_length = 0.01),
+  p.adjust.method = "bonferroni", # method for adjusting p-values for multiple comparisons
+  # adding new components to `ggstatsplot` default
+  ggplot.component = list(ggplot2::scale_y_continuous(sec.axis = ggplot2::dup_axis())),
+  k = 3,
+  title.prefix = "Patient",
+  palette = "default_jama",
+  package = "ggsci",
+  plotgrid.args = list(nrow = 2),
+  title.text = "Differences in mean speed by treatment for different patients"
+)
+
+
+# now for step data
+ggstatsplot::grouped_ggbetweenstats(
+  data = dplyr::filter(
+    .data = data.step,
+    patient %in% c("2", "3", "4", "5")
+  ),
+  x = treatment,
+  y = speed,
+  grouping.var = patient, # grouping variable
+  pairwise.comparisons = TRUE, # display significant pairwise comparisons
+  ggsignif.args = list(textsize = 4, tip_length = 0.01),
+  p.adjust.method = "bonferroni", # method for adjusting p-values for multiple comparisons
+  # adding new components to `ggstatsplot` default
+  ggplot.component = list(ggplot2::scale_y_continuous(sec.axis = ggplot2::dup_axis())),
+  k = 3,
+  title.prefix = "Patient",
+  palette = "default_jama",
+  package = "ggsci",
+  plotgrid.args = list(nrow = 2),
+  title.text = "Differences in instantaneous speed by treatment for different patients"
+)
+
+#correlation matrix plot
+ggstatsplot::ggcorrmat(
+  data = data.trajectory,
+  type = "robust", # correlation method
+  p.adjust.method = "holm", # p-value adjustment method for multiple comparisons
+  cor.vars = c(mean_speed:euclidian_distance), # a range of variables can be selected
+  cor.vars.names = c(
+    "Mean Speed", # variable names
+    "Average Directness",
+    "Cumulative Distance",
+    "Euclidian Distance"
+  ),
+  matrix.type = "upper", # type of visualization matrix
+  colors = c("#B2182B", "white", "#4D4D4D"),
+  title = "Correlalogram for track TC features",
+  subtitle = "Trajectory-centric migration features",
+  caption = "Source: `ggstatsplot` R package"
+)
 
 #--------------------Exploration: PCA and MDS---------------------------------------
 # princomp(): Spectral decomposition; examines the covariances / correlations between variables
@@ -150,36 +245,40 @@ plot(quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$average_direc
 trajectory.pca <- prcomp(subset(data.trajectory, select = -c(track_id, treatment, patient)), scale = TRUE) # remove factors from PCA
 # visualize eigenvectors
 summary(trajectory.pca)
+trajectory.pca$rotation[,1:4]
 #weird: in order for autoplot to work, first use ggfortify:: (gives error), then ggplot2:: works.
 ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "treatment") #to add colour groups: insert "data = dataframe, colour = 'column'"
 ggplot2::autoplot(trajectory.pca, loadings = TRUE, loadings.labels = TRUE, loadings.label.size = 3, data = data.trajectory, colour = "patient")
 
 
+#MDS? Probably remove
+trajectory.dist <- dist(data.trajectory)
 
-#-------------------------Normalization -----------------------------------------------------
-#normality tests --- check box-cox method  https://stackoverflow.com/questions/33999512/how-to-use-the-box-cox-power-transformation-in-r
-# transform dependent and independent variables by fitting boxcox(lm(variable ~ 1, data=df)) for each column of your matrix
-# range(out$x[out$y > max(out$y)-qchisq(0.95,1)/2]) to get confidence interval for lambda
-# you can get a common lambda by simply doing boxcox(as.matrix(x[,-ncol(x)]) ~ x[,ncol(x)]), assuming x is your data frame and the last column is your phenotype
-boxcox(lm(mean_speed~treatment,data=data.trajectory),lambda=seq(0,1,by=.1))
-out<-boxcox(lm(mean_speed~1, data=data.trajectory))
-# confidence intervals for lambda, constructed using the idea of a likelihood ratio test
-range(out$x[out$y > max(out$y)-qchisq(0.95,1)/2])
+trajectory.mds <- cmdscale(trajectory.dist)
+plot(trajectory.mds)
 
 
-bestNormalize(x, standardize = TRUE, allow_orderNorm = TRUE, allow_exp = TRUE,
-              out_of_sample = TRUE, cluster = NULL, k = 10, r = 5,
-              loo = FALSE)
+trajectory.isomds <- MASS::isoMDS(trajectory.dist, k=2)
+x<-trajectory.isomds$points[,1]
+y<-trajectory.isomds$points[,2]
+plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
+     main="Nonmetric MDS", type="n")
+text(x, y, labels = row.names(data.trajectory), cex=.7)
+autoplot(trajectory.isomds)
 
-# try to normalize
-par(mfrow = c(2, 3))
-qqPlot(data.trajectory$average_directness)  #car package
-qqPlot(log2(data.trajectory$average_directness))
-qqPlot(log10(data.trajectory$average_directness))
-qqPlot(log(data.trajectory$average_directness))
-qqPlot(exp(data.trajectory$average_directness))
-qqPlot(sqrt(data.trajectory$average_directness))
-par(mfrow = c(1, 1))
+#-------------------------Normalization -----------------------------------
+ms.bn <- bestNormalize::bestNormalize(data.trajectory$mean_speed)
+ad.bn <- bestNormalize::bestNormalize(data.trajectory$average_directness)
+MASS::truehist(data.trajectory$mean_speed)
+MASS::truehist(ms.bn$x.t)
+MASS::truehist(data.trajectory$average_directness)
+MASS::truehist(ad.bn$x.t)
+
+car::qqPlot(ms.bn$x.t) #perfectly straight QQ plot
+
+tempdata.trajectory <- data.frame(ms.bn$x.t, ad.bn$x.t, data.trajectory$patient, data.trajectory$treatment)
+linmod.t <- lm(ms.bn.x.t ~ data.trajectory.patient * data.trajectory.treatment, data = tempdata.trajectory)
+summary(linmod.t)
 
 #------------------- Wilcox-test -----------
 
@@ -191,8 +290,6 @@ trajectories_releveled <-
 
 
 
-
-#MDS?
 
 # ---------------------------- Probabilistic index models--------------------------
 # PI summarizes the covariate effects on the shape of the response distribution, while remaining a very informative interpretation of the covariate effect sizes.
@@ -218,6 +315,11 @@ coef(pim_directness)
 ## Step-centric analysis
 
 #features as functions in time
+patient4 <- quick_subset_classifier(data.step, "patient", "4")
+#take sample of 5 tracks to plot
+sampl <-sample(patient4$track_id, 2)
+testp4 <- quick_subset_classifier(patient4, "track_id", sampl)
+plot_speedProfile(testp4, "treatment", "fmlp")
 #splines and wavelet basis functions to smooth the temporal profiles
 
 #---------------- Idea from paper ------------
@@ -244,6 +346,6 @@ pim_speed <- pim(formula=speed ~ treatment * patient +1, data = data.step) #!!!!
 # ------------- FPCA + hierarchichal and model-based clustering -------
 # Normal pca
 # SOME features are null at start/end of track, fix this first!! (best option most likely remove entire row)
+# do pca with percentiles?? no problem with missing data this way
 step.pca <- prcomp(subset(data.step, select = c(X, Y, speed, ta_deg, delta_ta_deg, norm_ta_deg)), scale = TRUE) # select which features to include in pca
-
 
