@@ -43,12 +43,14 @@ create_single_trajectory_table <- function(step_table, split_factors = NULL) {
   col4 <- numeric(length(col1)) #cumulative distance
   col5 <- numeric(length(col1)) #euclidian distance
   col6 <- numeric(length(col1)) #placeholder for split factor
+  col7 <- numeric(length(col1)) #total track length
   for (track in 1:length(col1)) {
     onetrack <- subset(step_table, step_table$track_id == track)
     col2[track] <- mean(onetrack$speed, na.rm = TRUE)
     col3[track] <- onetrack[nrow(onetrack) - 1, "average_directness"]
     col4[track] <- onetrack[1, "cumulative_distance"]
     col5[track] <- onetrack[1, "euclidian_distance"]
+    col7[track] <- nrow(onetrack)
     if (!is.null(split_factors)) {
       # without as.character, treatment is 1 or 2 (internal numeric)
       col6[track] <- as.character(onetrack[1, split_factors])
@@ -60,7 +62,8 @@ create_single_trajectory_table <- function(step_table, split_factors = NULL) {
       mean_speed = col2,
       average_directness = col3,
       cumulative_distance = col4,
-      euclidian_distance = col5
+      euclidian_distance = col5,
+      track_length = col7
     )
   if (!is.null(split_factors)) {
     # if the data was split first, add classifier info back in
