@@ -1,14 +1,24 @@
 # better tracked data
 #samples MIA: 3=control, 4=fmlp, 5=cxcl8, 6=cxcl1
 datalocations <-
-  c("D:\\CellMIA\\p2_pbs.txt", "D:\\CellMIA\\p2_fmlp.txt", "D:\\CellMIA\\p2_cxcl1.txt", "D:\\CellMIA\\p2_cxcl8.txt",
-    "D:\\CellMIA\\p3_pbs.txt", "D:\\CellMIA\\p3_fmlp.txt", "D:\\CellMIA\\p3_cxcl1.txt", "D:\\CellMIA\\p3_cxcl8.txt",
-    "D:\\CellMIA\\p4_pbs.txt", "D:\\CellMIA\\p4_fmlp.txt", "D:\\CellMIA\\p4_cxcl1.txt", "D:\\CellMIA\\p4_cxcl8.txt",
-    "D:\\CellMIA\\p5_pbs.txt", "D:\\CellMIA\\p5_fmlp.txt", "D:\\CellMIA\\p5_cxcl1.txt", "D:\\CellMIA\\p5_cxcl8.txt") #
+  c("data/Leuko_Ghent/p2_pbs.txt", "data/Leuko_Ghent/p2_fmlp.txt", "data/Leuko_Ghent/p2_cxcl1.txt", "data/Leuko_Ghent/p2_cxcl8.txt",
+    "data/Leuko_Ghent/p3_pbs.txt", "data/Leuko_Ghent/p3_fmlp.txt", "data/Leuko_Ghent/p3_cxcl1.txt", "data/Leuko_Ghent/p3_cxcl8.txt",
+    "data/Leuko_Ghent/p4_pbs.txt", "data/Leuko_Ghent/p4_fmlp.txt", "data/Leuko_Ghent/p4_cxcl1.txt", "data/Leuko_Ghent/p4_cxcl8.txt",
+    "data/Leuko_Ghent/p5_pbs.txt", "data/Leuko_Ghent/p5_fmlp.txt", "data/Leuko_Ghent/p5_cxcl1.txt", "data/Leuko_Ghent/p5_cxcl8.txt") #
 data_original = lapply(datalocations,
                   FUN = read.table,
                   header = TRUE,
                   sep = "\t")
+
+# calculate delta z from x and y + use sum to calculate rolling cumulative distance
+for (i in 1:length(data_original)) {
+  data_original[[i]]$delta_z = 0      # create placeholder delta z that is 0
+  for (rownr in 1:length(data_original[[i]])) { # get full dataframe, go through each row
+                      # remember x and y, calculate delta z and add
+  }
+}
+
+
 
 #----------------------- IN CASE OF GUI LATER ----------------------------
 #read single table, read class1 and class2 text fields (2x2 fields, column name & specific factor)
@@ -136,7 +146,7 @@ plot(data.trajectory$average_directness,
 plot(quick_subset_classifier(data.trajectory, "treamtent", "pbs")$average_directness, quick_subset_classifier(data.trajectory, "treamtent", "pbs")$mean_speed, main = "PBS", xlab = "Avg directness", ylab = "Mean speed")
 plot(quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$average_directness, quick_subset_classifier(data.trajectory, "treamtent", "fmlp")$mean_speed, main = "FMLP", xlab = "Avg directness", ylab = "Mean speed")
 
-
+#scatter plot matrix of all features, pairwise
 car::scatterplotMatrix(quick_subset_classifier(patient4, "treatment", "fmlp")[3:8])
 
 #Automatically detect highly skewed features using skewness()?
@@ -297,9 +307,9 @@ trajectories_releveled <-
 # PIM with 2 groups == WMW test?
 
 # double colon for pim function does not seem to work?
-pim_deltaz <- pim(formula=mean_speed ~ treatment * patient +1, data = data.trajectory)
-summary(pim_deltaz)
-coef(pim_deltaz)
+pim_speed <- pim(formula=mean_speed ~ treatment * patient +1, data = data.trajectory)
+summary(pim_speed)
+coef(pim_speed)
 
 pim_directness <- pim(formula=average_directness ~ treatment * patient +1, data = data.trajectory)
 summary(pim_directness)
@@ -311,16 +321,17 @@ coef(pim_directness)
 #omnibus tests
 
 
-
+#----------------------------------------------------------------------------------------
 ## Step-centric analysis
 
 #features as functions in time
 patient4 <- quick_subset_classifier(data.step, "patient", "4")
-#take sample of 5 tracks to plot
-sampl <-sample(patient4$track_id, 2)
+#take sample of x tracks to plot
+sampl <-sample(patient4$track_id, 1)
 testp4 <- quick_subset_classifier(patient4, "track_id", sampl)
 plot_speedProfile(testp4, "treatment", "fmlp")
-#splines and wavelet basis functions to smooth the temporal profiles
+
+plot_speedProfile(data.step, "patient", "4")
 
 #---------------- Idea from paper ------------
 # singular value decomposition to get eigenvectors
@@ -333,14 +344,17 @@ plot_speedProfile(testp4, "treatment", "fmlp")
 # ----------- Try step-centric PIM ------------
 #include frame data as well?
 pim_speed <- pim(formula=speed ~ treatment * patient +1, data = data.step) #!!!! error: cannot allocate vector of size 169.3 Gb
-# Try pim on pca components
+# Try pim on pca components?
 
+#splines and wavelet basis functions to smooth the temporal profiles
+#basis function expansion,    fda package
+#1.Construct the basis functions: create.bspline.basis    2.Smooth basis by smooth.basis    3.FPCA by pca.fd on train dataset
 
+fdatryoutcondition <- quick_subset_classifier(quick_subset_classifier(data.step, "patient", "2"), "treatment", "pbs")
+plot_speedProfile(quick_subset_classifier(data.step, "patient", "4"), "treatment", "pbs")
+FPCAobj <- FPCA(Ly=fdatryoutcondition[["speed"]], Lt=fdatryoutcondition[["frame_id"]])
+testi <- fdata(fdatryoutcondition)
 
-#basis function expansion
-
-
-# !!! use permutation tests to estimate null hypotheses and compare to original test results
 
 
 # ------------- FPCA + hierarchichal and model-based clustering -------
