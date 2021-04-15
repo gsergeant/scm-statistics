@@ -22,6 +22,8 @@ library(car)
 library(Hmisc)
 # used for simple histogram and boxplox combo plots
 library(UsingR)
+# For plotting matrix using ggplot
+library(reshape2)
 
 
 ######### placeholder for unnecessary packages/packages we are not using but need to be installed ###
@@ -29,3 +31,8 @@ library(MASS)
 library(rlang)
 library(vctrs)
 library(backports)
+library(fdapace)
+library(fda.usc)
+library(VGAM)
+library(gamlss)
+library(coin)
