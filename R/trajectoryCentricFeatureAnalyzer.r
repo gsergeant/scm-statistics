@@ -6,7 +6,24 @@
 trajectory_data = read.table("data/features_trajectory.txt", sep = "\t", header = TRUE)
 head(trajectory_data)
 
-
+# add track lenghts to essen trajectory data
+# function to not keep created subsets in memory
+getEssen.trackLengths <- function() {
+  track_lenghts <- c()
+  for(patient in unique(step_data$patientnumber)){
+    for(treatment in unique(step_data$treatment)){
+      tempsubset <- step_data[which(step_data[["patientnumber"]] == patient), ]
+      realsubset <- tempsubset[which(tempsubset[["treatment"]] == treatment), ]
+      for(track in unique(realsubset$track_id)){
+        track_lenghts <- c(track_lenghts, nrow(realsubset[which(realsubset[["track_id"]] == track), ]))
+      }
+    }
+  }
+  return(track_lenghts)
+}
+essen.trackLengths <- getEssen.trackLengths()
+#add track lenghts to trajectory data frame
+essen.trajectory$track_length <- essen.trackLengths
 
 
 
