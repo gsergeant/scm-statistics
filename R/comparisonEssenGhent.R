@@ -52,7 +52,7 @@ for (patient in unique(ghent.trajectory$patient)) {
 trackamounts <- c()
 for(patient in unique(essen.trajectory$patientnumber)){
   for(treatment in unique(essen.trajectory$treatment)){
-    count <- sum(essen.trajectory[,10]== treatment & essen.trajectory[,9]== patient)
+    count <- sum(essen.trajectory[,7]== treatment & essen.trajectory[,6]== patient)
     trackamounts <- c(trackamounts, count)
   }
 }
