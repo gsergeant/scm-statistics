@@ -50,13 +50,13 @@ for (patient in unique(ghent.trajectory$patient)) {
 
 #Essen
 trackamounts <- c()
-for(patient in unique(essen.trajectory$patientnumber)){
+for(patient in unique(essen.trajectory$patient)){
   for(treatment in unique(essen.trajectory$treatment)){
     count <- sum(essen.trajectory[,7]== treatment & essen.trajectory[,6]== patient)
     trackamounts <- c(trackamounts, count)
   }
 }
-matrix.trackamounts.Essen <- matrix(trackamounts, nrow = 4, ncol = 9, dimnames = list(unique(essen.trajectory$treatment),unique(essen.trajectory$patientnumber)))
+matrix.trackamounts.Essen <- matrix(trackamounts, nrow = 4, ncol = 9, dimnames = list(unique(essen.trajectory$treatment),unique(essen.trajectory$patient)))
 #Now visualize the matrix
 meltmatrix.Essen <- reshape2::melt(matrix.trackamounts.Essen)
 # must re-restablish patient number as factor (else the interval between numbers is too large)
@@ -69,16 +69,16 @@ ggplot(meltmatrix.Essen, aes(x = Var2, y = Var1)) +
                      axis.text.y=element_text(size=9),
                      plot.title=element_text(size=11))
 #compare vs track length, separate plot per patient
-for (patient in unique(essen.trajectory$patientnumber)) {
-  tempSubset <- essen.trajectory[which(essen.trajectory[["patientnumber"]] == patient), ]
+for (patient in unique(essen.trajectory$patient)) {
+  tempSubset <- essen.trajectory[which(essen.trajectory[["patient"]] == patient), ]
   tempSubset <- na.omit(tempSubset)
   print(ggplot(tempSubset, aes(x = track_length, group = treatment, fill = treatment)) +
     geom_histogram(alpha=.4) +
     labs(title = paste("Trajectory data: patient ", patient," - Essen")))
 }
 #limit x axis to 200
-for (patient in unique(essen.trajectory$patientnumber)) {
-  tempSubset <- essen.trajectory[which(essen.trajectory[["patientnumber"]] == patient), ]
+for (patient in unique(essen.trajectory$patient)) {
+  tempSubset <- essen.trajectory[which(essen.trajectory[["patient"]] == patient), ]
   tempSubset <- na.omit(tempSubset)
   print(ggplot(tempSubset, aes(x = track_length, group = treatment, fill = treatment)) +
           geom_histogram(alpha=.4) +
@@ -109,6 +109,12 @@ plot(density(subGhent.pbsfmlp[which(subGhent.pbsfmlp[["treatment"]] == "pbs"), "
 shapiro.test(subGhent.pbsfmlp[which(subGhent.pbsfmlp[["treatment"]] == "pbs"), "mean_speed"])
 plot(density(subGhent.pbsfmlp[which(subGhent.pbsfmlp[["treatment"]] == "fmlp"), "mean_speed"]), main = "Ghent FMLP mean speed density distribution")
 shapiro.test(subGhent.pbsfmlp[which(subGhent.pbsfmlp[["treatment"]] == "fmlp"), "mean_speed"])
+#QQ-plots
+car::qqPlot(ghent.trajectory[which(ghent.trajectory[["treatment"]] == "pbs"), "mean_speed"], ylab= "mean_speed")
+title("QQplot Ghent PBS", adj = 0)
+car::qqPlot(ghent.trajectory[which(ghent.trajectory[["treatment"]] == "fmlp"), "mean_speed"], ylab= "mean_speed")
+title("QQplot Ghent fMLP", adj = 0)
+
 
 # NOT normally distributed means non-parametric group comparison
 # Location test: Wilcoxon
@@ -125,17 +131,27 @@ ggplot(data=subGhent.pbsfmlp, aes(x = treatment, y=mean_speed, group=treatment, 
   labs(title = "Ghent PBS-FMLP - grouped")
 
 # -------- Essen ----
+ggplot(data=essen.trajectory, aes(x=mean_speed, group=status, fill=status)) +
+  geom_density(aes(y = ..count..), alpha=.4) +
+  labs(title = "Grouped trajectory data -all treatments- Essen", y = "# of tracks")
 # Essen data, pbs, patient groups per disease status
-traj.essen.pbs <- essen.trajectory[which(essen.trajectory[["treatment"]] == "PBS"), ]
+traj.essen.pbs <- essen.trajectory[which(essen.trajectory[["treatment"]] == "pbs"), ]
 ggplot(data=traj.essen.pbs, aes(x=mean_speed, group=status, fill=status)) +
   geom_density(aes(y = ..count..), alpha=.4) +
-  labs(title = "Grouped trajectory data - Essen", y = "# of tracks")
+  labs(title = "Grouped trajectory data -PBS only- Essen", y = "# of tracks")
 plot(density(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"), "mean_speed"]), main = "Essen PBS-control mean speed density")
 shapiro.test(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"), "mean_speed"])
 plot(density(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"), "mean_speed"]), main = "Essen PBS-mild mean speed density")
 shapiro.test(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"), "mean_speed"])
 plot(density(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"), "mean_speed"]), main = "Essen PBS-severe mean speed density")
 shapiro.test(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"), "mean_speed"])
+#QQplots
+car::qqPlot(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"), "mean_speed"], ylab= "mean_speed")
+title("Essen healthy, PBS only", adj = 0)
+car::qqPlot(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"), "mean_speed"], ylab= "mean_speed")
+title("Essen mild MDS, PBS only", adj = 0)
+car::qqPlot(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"), "mean_speed"], ylab= "mean_speed")
+title("Essen severe MDS, PBS only", adj = 0)
 
 # NOT normally distributed means non-parametric group comparison
 # Location
@@ -158,7 +174,8 @@ ggplot(data=traj.essen.pbs, aes(x = status, y=mean_speed, group=status, fill=sta
   geom_boxplot() +
   labs(title = "Essen PBS mean speed - grouped")
 
-# ------ small upgrade: test multiple moments of distribution----
+# ------ Upgrade: test multiple moments of distribution----
+#---- Ghent ----
 #Ghent data, PBS vs CXCL , patients grouped.
 boxplot(ghent.trajectory[which(ghent.trajectory[["treatment"]] == "pbs"), "mean_speed"],ghent.trajectory[which(ghent.trajectory[["treatment"]] == "cxcl1"), "mean_speed"], main = "Ghent PBS-CXCL1 mean speed")
 #Density followed by Shapiro Wilk test
@@ -224,7 +241,8 @@ for (i in 1:nreps) {
 plot(density(permkurt), main = "Permutations of kurtosis difference \n Ghent PBS-CXCL1")
 abline(v = kurtdifference, col = "red")
 
-# Now test additional moments in Essen dataset: control vs mild mds
+#----- Essen----
+# Now test additional moments in Essen dataset: control vs mild MDS,
 # Post hoc test did not show significant diference between these
 # Re-test location (although not necessary - same result as posthoc dunn test)
 wilcox.test(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"), "mean_speed"], traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"), "mean_speed"])
@@ -261,6 +279,7 @@ abline(v = skewdifference, col = "red")
 #from this table we can see 4887 permutations out of 5000 are smaller than the original skewness difference
 table(skeww < skewdifference)
 4887/5000  #0.9774 Outside the 95th percentile, so significant effect of mild status vs healthy on mean speed skewness
+
 # Kurtosis, same method as skewness as there is no test available
 kurtcontrol <- moments::kurtosis(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"), "mean_speed"])
 kurtmild <- moments::kurtosis(traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"), "mean_speed"])
@@ -278,9 +297,11 @@ for (i in 1:nreps) {
 }
 plot(density(permkurt), main = "Permutations of kurtosis difference \n Essen healthy-mild MDS")
 abline(v = kurtdifference, col = "red")
+table(permkurt < kurtdifference)
+4437/5000
 
 # ---------- EXPAND ROUTINE: ungroup patients - MODELING ---------
-#Some exploratory plots
+#----Some exploratory plots of the ungrouped datasets----
 #Ghent data
 ggplot(data=ghent.trajectory[which(ghent.trajectory[["treatment"]] == "pbs"),], aes(x=mean_speed, group=patient, fill=patient)) +
   geom_density(aes(y = ..count..), alpha=.4) +
@@ -295,17 +316,37 @@ ggplot(data=ghent.trajectory[which(ghent.trajectory[["treatment"]] == "cxcl8"),]
   geom_density(aes(y = ..count..), alpha=.4)+
   labs(title = "Ghent CXCL-8", y = "# of tracks")
 
+#Essen data
+ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"),], aes(x=mean_speed, group=patient, fill=patient)) +
+  geom_density(aes(y = ..count..), alpha=.4) +
+  labs(title = "Essen control patients", y = "# of tracks")
+ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"),], aes(x=mean_speed, group=patient, fill=patient)) +
+  geom_density(aes(y = ..count..), alpha=.4)+
+  labs(title = "Essen mild patients", y = "# of tracks")
+ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"),], aes(x=mean_speed, group=patient, fill=patient)) +
+  geom_density(aes(y = ..count..), alpha=.4)+
+  labs(title = "Essen severe patients", y = "# of tracks")
+# final one again with extra layer that shows data points (because there are a lot of low measurement points in this case)
+# not very helpful plot when looking at it
+ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"),], aes(x=mean_speed, group=patient, fill=patient)) +
+  geom_density(aes(y = ..count..), alpha=.4) +
+  geom_rug(aes(x = mean_speed, y = 0), position = position_jitter(height = 0))+
+  labs(title = "Essen severe patients", y = "# of tracks")
+
+
+# ------- GLMM Ghent ----
 # Linear mixed (effect) model: model effect of treatment on mean speed for each individual patient
 lmm.Ghent.allTreat <- lme4::lmer(mean_speed ~ treatment + (treatment | patient), ghent.trajectory)
 summary(lmm.Ghent.allTreat)
-## compare resuduals between lmm and normal lm
+## compare resuduals between lmm and normal linear model
 sqrt(sum(residuals(lm(mean_speed~treatment * patient,data=ghent.trajectory))^2)/(dim(ghent.trajectory)[1]-2))
 sqrt(sum(resid(lmm.Ghent.allTreat)^2)/(dim(ghent.trajectory)[1]-2))
 # compare models using AIC
 fit1 <- lm(mean_speed~treatment * patient,data=ghent.trajectory)
 fit2 <- lmm.Ghent.allTreat
+# (fit3 =  simpler mixed model with only variable intercept, not slope)
 fit3 <- lme4::lmer(mean_speed ~ treatment + (1 | patient), ghent.trajectory)
-# REML models will be automatically recalculated onder ML (max likelihood)
+# REML models will be automatically recalculated onder ML (max likelihood) when using this anova
 anova(fit2, fit1)
 # plot prediction of mixed effect models using sjPlot package
 sjPlot::plot_model(lmm.Ghent.allTreat,  type = "pred", title = "Predicted mean speed: random treatment|patient")
@@ -317,34 +358,31 @@ glmm.Ghent.allTreat <- lme4::glmer(mean_speed ~ treatment + (treatment | patient
 sjPlot::plot_model(glmm.Ghent.allTreat,  type = "pred", title = "Predicted mean speed: random treatment|patient")
 summary(glmm.Ghent.allTreat)
 
-
-#Essen data
-ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "control"),], aes(x=mean_speed, group=patientnumber, fill=patientnumber)) +
-  geom_density(aes(y = ..count..), alpha=.4) +
-  labs(title = "Essen control patients", y = "# of tracks")
-ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "mild"),], aes(x=mean_speed, group=patientnumber, fill=patientnumber)) +
-  geom_density(aes(y = ..count..), alpha=.4)+
-  labs(title = "Essen mild patients", y = "# of tracks")
-ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"),], aes(x=mean_speed, group=patientnumber, fill=patientnumber)) +
-  geom_density(aes(y = ..count..), alpha=.4)+
-  labs(title = "Essen severe patients", y = "# of tracks")
-# final one again with extra layer that shows data points (because there are a lot of low measurement points in this case)
-# not very helpful plot when looking at it
-ggplot(data=traj.essen.pbs[which(traj.essen.pbs[["status"]] == "severe"),], aes(x=mean_speed, group=patientnumber, fill=patientnumber)) +
-  geom_density(aes(y = ..count..), alpha=.4) +
-  geom_rug(aes(x = mean_speed, y = 0), position = position_jitter(height = 0))+
-  labs(title = "Essen severe patients", y = "# of tracks")
-
+#---- GLMM Essen ----
 # Linear Mixed Model
-lmm.Essen.pbs <- lme4::lmer(mean_speed ~ status + (status|patientnumber), data = traj.essen.pbs)
+lmm.Essen.pbs <- lme4::lmer(mean_speed ~ status + (status|patient), data = traj.essen.pbs)
 summary(lmm.Essen.pbs)
-lmm.Essen.allTreat <- lme4::lmer(mean_speed ~ status * treatment + (treatment|patientnumber) + (status|patientnumber), data = essen.trajectory)
+lmm.Essen.allTreat <- lme4::lmer(mean_speed ~ status * treatment + (treatment|patient) + (status|patient), data = essen.trajectory)
 summary(lmm.Essen.allTreat)
-# compare residuals of simple and complex model
+
+# Using interactive random effects is also possible,
+# although status:treatment interactions are then present in both fixed and random effect results
+lmm.Essen.allTreat.interaction <- lme4::lmer(mean_speed ~ status * treatment + (treatment*status|patient), data = essen.trajectory)
+
+
+# Compare residuals of simple and complex model
 sqrt(sum(resid(lmm.Essen.pbs)^2)/(dim(traj.essen.pbs)[1]-2))
 sqrt(sum(resid(lmm.Essen.allTreat)^2)/(dim(essen.trajectory)[1]-2))
 # lower residuals in the simpler model makes sense: smaller dataframe with a lot less dimensionality
+# Standard Fitted vs Residuals plot
+plot(lmm.Essen.allTreat, type = c("p", "smooth"))
+# Scale-location (based on raw residuals instead of standardized)
+plot(lmm.Essen.allTreat, sqrt(abs(resid(.))) ~ fitted(.), type = c("p", "smooth"))
+# QQ plot (also based on raw residuals)
+lattice::qqmath(lmm.Essen.allTreat, id = 0.05)
 # anova does not make sense with these two models, as they were fit on different size datasets
+
+# Some prediction plots using sjPlot package
 sjPlot::plot_model(lmm.Essen.pbs,  type = "pred", title = "Predicted mean speed: random status|patient")
 sjPlot::plot_model(lmm.Essen.allTreat,  type = "pred",terms = c("treatment", "status"), title = "Predicted mean speed: random treatment|patient")
 # another type of plot: interaction
@@ -354,6 +392,29 @@ sjPlot::tab_model(lmm.Essen.pbs)
 sjPlot::tab_model(lmm.Essen.allTreat)
 # a combination table can also be made but is quite bulky
 sjPlot::tab_model(lmm.Essen.pbs, lmm.Essen.allTreat)
+
+# Try out inverse gaussian/gamma distribution (family = inverse.gaussian / Gamma), gamma makes more sense for this dataset?
+# In the dataset, there is a non-positive value (a zero) somewhere
+# thus, create dataset copies that do not have this zero and perform glmm with these
+traj.essen.pbs.nonzero <- dplyr::filter(traj.essen.pbs, mean_speed > 0)
+essen.trajectory.nonzero <- dplyr::filter(essen.trajectory, mean_speed > 0)
+glmm.Essen.pbs <- lme4::glmer(mean_speed ~ status + (status|patient), traj.essen.pbs.nonzero, family = inverse.gaussian(link = "identity"))
+glmm.Essen.allTreat <- lme4::glmer(mean_speed ~ status * treatment + (treatment|patient) + (status|patient), data = essen.trajectory.nonzero, family = Gamma(link = "identity"))
+
+# Residuals plot
+plot(glmm.Essen.allTreat, type = c("p", "smooth"))
+# Scale-location
+plot(glmm.Essen.allTreat, sqrt(abs(resid(.))) ~ fitted(.), type = c("p", "smooth"))
+# QQ plot
+lattice::qqmath(glmm.Essen.allTreat, id = 0.05)
+
+
+#Summary and prediction
+summary(glmm.Essen.pbs)
+sjPlot::plot_model(glmm.Essen.pbs,  type = "pred", title = "Predicted mean speed: random status|patient")
+summary(glmm.Essen.allTreat)
+sjPlot::plot_model(glmm.Essen.allTreat,  type = "pred",terms = c("treatment", "status"), title = "Predicted mean speed: random treatment|patient")
+# Conclusion: Gamma-based seems better than inverse gaussian. But overall the result is very similar to standard gaussian modelling.
 
 
 # ---------- Probabilistic Index models --------
@@ -365,9 +426,12 @@ pimGhent_traj <- pim(mean_speed ~ treatment * patient, data = ghent.trajectory)
 summary(pimGhent_traj)
 
 #Essen data
-pimEssen <- pim(mean_speed ~ treatment * patientnumber * status + 1, data = essen.trajectory) # vector too large 38.6Gb
-pimEssen <- pim(mean_speed ~ treatment * status + patientnumber + 1, data = essen.trajectory) # vector 7.1 gig also impossible
-pimEssen <- pim(mean_speed ~ treatment * status + patientnumber, data = essen.trajectory)
+# Unfortunately, using PIMs on very large datasets, such as our Essen set, quickly becomes a very computationally demanding task
+# Especially because of the three levels of hierarchy that are present and their interactions.
+# For more information on this subject and possible workarounds, we recommend https://github.com/HBossier/BigDataPIM
+# The dissertation associated with that repository can be found here: https://libstore.ugent.be/fulltxt/RUG01/002/376/287/RUG01-002376287_2017_0001_AC.pdf
+pimEssen <- pim(mean_speed ~ treatment * patient * status + 1, data = essen.trajectory) # vector too large 38.6Gb
+pimEssen <- pim(mean_speed ~ treatment * status + patient + 1, data = essen.trajectory) # vector 7.1 gig also impossible
+pimEssen <- pim(mean_speed ~ treatment + status + patient + 1, data = essen.trajectory)
 summary(pimEssen)
 coef(pimEssen)
-plot(pimEssen)
