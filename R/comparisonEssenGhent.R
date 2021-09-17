@@ -11,6 +11,7 @@ str(ghent.trajectory)
 essen.trajectory <- readRDS("data.Essen.trajectory.rds")
 head(essen.trajectory)
 str(essen.trajectory)
+# Note: Speed is measured in pixels/min and is derived from the step data's delta z
 
 # ----------- Exploration: Track length vs track amount -------
 #plot track length -- this grouped plot is not very informative
