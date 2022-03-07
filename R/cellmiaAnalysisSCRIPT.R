@@ -157,15 +157,42 @@ car::scatterplotMatrix(quick_subset_classifier(patient4, "treatment", "fmlp")[3:
 
 #--------------GG Statsplot ------------------
 ggstatsplot::ggbetweenstats(
-  data = data.trajectory,
+  data = ghent.trajectory,
   x = patient,
   y = mean_speed,
-  title = "Distribution of mean speed across patients"
+  pairwise.comparisons = TRUE, # display significant pairwise comparisons
+  title = "Distribution of mean speed across patients, Ghent"
 )
+ggstatsplot::ggbetweenstats(
+  data = ghent.trajectory,
+  x = treatment,
+  y = mean_speed,
+  pairwise.comparisons = TRUE, # display significant pairwise comparisons
+  title = "Distribution of mean speed across treatments, Ghent"
+)
+
+ggstatsplot::ggbetweenstats(
+  data = essen.trajectory,
+  x = patient,
+  y = mean_speed,
+  #pairwise.comparisons = TRUE, # too much information for this plot
+  title = "Distribution of mean speed across patients, Essen"
+)
+ggstatsplot::ggbetweenstats(
+  data = dplyr::filter(
+    .data = essen.trajectory,
+    treatment %in% c("pbs")
+  ),
+  x = patient,
+  y = mean_speed,
+  pairwise.comparisons = TRUE, # too much information for this plot
+  title = "Distribution of PBS mean speed across patients, Essen"
+)
+
 
 ggstatsplot::grouped_ggbetweenstats(
   data = dplyr::filter(
-    .data = data.trajectory,
+    .data = ghent.trajectory,
     treatment %in% c("pbs", "cxcl1", "cxcl8", "fmlp")
   ),
   x = patient,
@@ -181,14 +208,14 @@ ggstatsplot::grouped_ggbetweenstats(
   palette = "default_jama",
   package = "ggsci",
   plotgrid.args = list(nrow = 2),
-  title.text = "Differences in mean speed by patient for different treatments"
+  title.text = "Differences in mean speed by patient for treatments, Ghent"
 )
 
 # now grouped the other way around
 ggstatsplot::grouped_ggbetweenstats(
   data = dplyr::filter(
-    .data = data.trajectory,
-    patient %in% c("2", "3", "4", "5")
+    .data = ghent.trajectory,
+    patient %in% c("1", "2", "3", "4")
   ),
   x = treatment,
   y = mean_speed,
@@ -203,18 +230,18 @@ ggstatsplot::grouped_ggbetweenstats(
   palette = "default_jama",
   package = "ggsci",
   plotgrid.args = list(nrow = 2),
-  title.text = "Differences in mean speed by treatment for different patients"
+  title.text = "Mean speed comparison per patient/treatment, Ghent"
 )
 
 
 # now for step data
 ggstatsplot::grouped_ggbetweenstats(
   data = dplyr::filter(
-    .data = data.step,
-    patient %in% c("2", "3", "4", "5")
+    .data = data.Ghent.step,
+    patient %in% c("1", "2", "3", "4")
   ),
   x = treatment,
-  y = speed,
+  y = delta_z,
   grouping.var = patient, # grouping variable
   pairwise.comparisons = TRUE, # display significant pairwise comparisons
   ggsignif.args = list(textsize = 4, tip_length = 0.01),
@@ -226,7 +253,7 @@ ggstatsplot::grouped_ggbetweenstats(
   palette = "default_jama",
   package = "ggsci",
   plotgrid.args = list(nrow = 2),
-  title.text = "Differences in instantaneous speed by treatment for different patients"
+  title.text = "DeltaZ comparison by treatment/patient, Ghent"
 )
 
 #correlation matrix plot
