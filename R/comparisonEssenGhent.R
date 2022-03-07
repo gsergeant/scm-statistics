@@ -311,7 +311,7 @@ for (i in 1:nreps) {
   skewdiff <- moments::skewness(groupcontrol) - moments::skewness(groupmild)
   skeww[i] <- skewdiff
 }
-plot(density(skeww), main = "Permutations of skewness difference \n Essen healthy-mild MDS")
+plot(density(skeww), main = "Permutations of skewness difference \n Essen healthy-mild MDS", xlab= "Skewness difference")
 abline(v = skewdifference, col = "red")
 #from this table we can see 4887 permutations out of 5000 are smaller than the original skewness difference
 table(skeww < skewdifference)
@@ -332,7 +332,7 @@ for (i in 1:nreps) {
   kurtdiff <- moments::kurtosis(groupcontrol) - moments::kurtosis(groupmild)
   permkurt[i] <- kurtdiff
 }
-plot(density(permkurt), main = "Permutations of kurtosis difference \n Essen healthy-mild MDS")
+plot(density(permkurt), main = "Permutations of kurtosis difference \n Essen healthy-mild MDS", xlab = "Kurtosis difference")
 abline(v = kurtdifference, col = "red")
 table(permkurt < kurtdifference)
 4437/5000 #0.8874
@@ -378,6 +378,21 @@ pimGhent_traj2 <- pim(mean_speed ~ treatment * patient, data = ghent.trajectory)
 
 summary(pimGhent_traj)
 coef(pimGhent_traj)
+
+#Plot probabilities and their confidence intervals
+#create prob/confint dataframe with logical column names
+pimconf <- confint(pimGhent_traj)
+pimconf <- as.data.frame(pimconf)
+data.table::setDT(pimconf, keep.rownames = TRUE)[]
+colnames(pimconf) <- c("Parameter", "Min", "Max")
+pimconf$Probability <- locfit::expit(coef(pimGhent_traj))
+pimconf$Min<-locfit::expit(pimconf$Min)
+pimconf$Max<-locfit::expit(pimconf$Max)
+# Plot intervals with rotated x axes values
+ggplot(pimconf,aes(Parameter,y=Probability,ymin=Min,ymax=Max,color="red")) +
+  geom_pointrange() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  geom_hline(yintercept = 0.5, linetype = 2)
 
 #Essen data
 # Unfortunately, using PIMs on very large datasets, such as our Essen set, quickly becomes a very computationally demanding task
@@ -448,7 +463,8 @@ sqrt(sum(resid(lmm.Essen.allTreat)^2)/(dim(essen.trajectory)[1]-2))
 # Residuals of normal linear models with mixed models on both datasets are comparable
 
 # Standard Fitted vs Residuals plot
-plot(lmm.Essen.allTreat, type = c("p", "smooth"))
+plot(lmm.Essen.pbs, type = c("p", "smooth"))
+plot(lmm.Essen.allTreat, type = c("p", "smooth"), main = "C")
 # Scale-location (based on raw residuals instead of standardized)
 plot(lmm.Essen.allTreat, sqrt(abs(resid(.))) ~ fitted(.), type = c("p", "smooth"))
 # QQ plot (also based on raw residuals)
